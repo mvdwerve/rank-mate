@@ -1,9 +1,153 @@
 <!doctype html>
-<html>
+<html data-bs-theme="dark">
   <head>
-    <title>This is the title of the webpage!</title>
+    <title>RankMate - sorting lists two elements at a time!</title>
+    <meta name="description" content="Sort a list two elements at a time. Fully in your browser, no servers involved." />
+</head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+
+// Function to simulate less_than comparison
+function lessThan(a, b) {
+    return new Promise((resolve) => {
+        // Set values on buttons
+        document.getElementById('btnA').textContent = a;
+        document.getElementById('btnB').textContent = b;
+
+        // Wait for button click to resolve the comparison
+        document.getElementById('btnA').onclick = () => resolve(true);  // Left value is smaller
+        document.getElementById('btnB').onclick = () => resolve(false); // Right value is smaller
+    });
+}
+
+// The merge function that combines two sorted arrays
+function merge(left, right) {
+    const merged = [];
+    let i = 0;
+    let j = 0;
+
+    async function mergeSortedArrays() {
+        while (i < left.length && j < right.length) {
+            const isLessThan = await lessThan(left[i], right[j]);
+            if (isLessThan) {
+                merged.push(left[i]);
+                i++;
+            } else {
+                merged.push(right[j]);
+                j++;
+            }
+        }
+
+        // Append the remaining elements from left or right
+        merged.push(...left.slice(i));
+        merged.push(...right.slice(j));
+        return merged;
+    }
+
+    return mergeSortedArrays();
+}
+
+// The recursive merge-insertion sort function
+async function mergeInsertionSort(arr) {
+    // Helper function for merge-insertion sort
+    async function mergeInsertionRecursive(subarray) {
+        if (subarray.length <= 1) {
+            return subarray;
+        } else if (subarray.length <= 5) {
+            // Insertion sort for small subarrays
+            for (let i = 1; i < subarray.length; i++) {
+                const key = subarray[i];
+                let j = i - 1;
+                while (j >= 0 && (await lessThan(key, subarray[j]))) {
+                    subarray[j + 1] = subarray[j];
+                    j--;
+                }
+                subarray[j + 1] = key;
+            }
+            return subarray;
+        } else {
+            // Split array into two halves
+            const mid = Math.floor(subarray.length / 2);
+            const left = await mergeInsertionRecursive(subarray.slice(0, mid));
+            const right = await mergeInsertionRecursive(subarray.slice(mid));
+            return await merge(left, right);
+        }
+    }
+
+    // Perform merge-insertion sort on the input array
+    return await mergeInsertionRecursive(arr);
+}
+// Function to display sorted array in the list
+function displaySortedArray(sortedArray) {
+    const resultList = document.getElementById('result');
+    
+    // Clear any previous results in the list
+    resultList.innerHTML = '';
+
+    // Create a new list item for each element in the sorted array
+    sortedArray.forEach(item => {
+        const listItem = document.createElement('li'); // Create a new list item
+        listItem.textContent = item; // Set the list item's text content to the array item
+        resultList.appendChild(listItem); // Append the list item to the list
+    });
+}
+
+function sortTextarea() {
+  const inputText = document.getElementById('originalInput').value;
+  const array = inputText.split('\n').map(item => item.trim()).filter(item => item !== '');
+  displaySortedArray([])
+
+  mergeInsertionSort(array).then(sortedArray => {
+      console.log("Sorted Array:", sortedArray);
+      displaySortedArray(sortedArray);
+  });
+};
+
+    </script>
   </head>
   <body>
-    <p>This is an example paragraph. Anything in the <strong>body</strong> tag will appear on the page, just like this <strong>p</strong> tag and its contents.</p>
+    
+    <div class="container">
+      <h1></h1>
+      <div class="card" style="margin: 10px">
+        <div class="card-body">
+          <h5 class="card-title">RankMate - Sorting lists two elements at a time!</h5>
+          <p class="card-text">This is a nice, quick, and dirty little utility website mostly written with <a href="https://chatgpt.com/" target="_blank">ChatGPT</a> (I'm not a web dev) to help me apply <a href="https://en.wikipedia.org/wiki/Merge-insertion_sort" target="_blank">merge insertion sort</a> to my lists by manually allowing me to sort, which has been shown to have the lowest number of comparisons for lists <= 46 elements.</p>
+          <p class="card-text">It is all on a single webpage, there are no server interactions. Your list is never leaving your computer.</p>
+        </div>
+      </div>
+      <div class="card" style="margin: 10px">
+        <div class="card-body">
+          <h5 class="card-title">Step 1.</h5>
+          <h6 class="card-subtitle mb-2 text-muted">Items</h6>
+          <p class="card-text">Add all your items here. Each new line is a new item.</p>
+<textarea id="originalInput" style="width: 100%; height: 256px">
+Call Brian
+Clean Kitchen
+Feed Cats
+</textarea>
+          <a href="#" class="btn btn-primary" onclick="sortTextarea()">Start</a>
+        </div>
+      </div>
+      <div class="card" style="margin: 10px">
+        <div class="card-body">
+          <h5 class="card-title">Step 2.</h5>
+          <h6 class="card-subtitle mb-2 text-muted">SHOWDOWN</h6>
+          <p class="card-text">Vote for each individual option, selecting the most important one.</p>
+          <a href="#" id="btnA" class="btn btn-primary">A?</a>
+          or
+          <a href="#" id="btnB" class="btn btn-primary">B?</a>
+        </div>
+      </div>
+      <div class="card" style="margin: 10px">
+        <div class="card-body">
+          <h5 class="card-title">Step 3.</h5>
+          <h6 class="card-subtitle mb-2 text-muted">Result</h6>
+          <p class="card-text">Once you have done all the voting, the outcome will appear below!</p>
+          <ul id="result"></ul>
+        </div>
+      </div>
+  </div>
   </body>
 </html>
